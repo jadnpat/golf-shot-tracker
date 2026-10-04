@@ -1,7 +1,7 @@
-#include <LCD.h>
 #include <avr/io.h>
 #include <util/delay.h>
 #include <string.h>
+#include "LCD.h"
 
 #ifndef F_CPU
 #define F_CPU 16000000UL // Define CPU frequency for delay functions

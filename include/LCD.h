@@ -40,7 +40,7 @@
 #ifndef LCD_H
 #define LCD_H
 
-
+/* LCD pin definitions */
 #define DATA_PORT PORTD
 #define DATA_DDR DDRD
 
@@ -51,6 +51,7 @@
 #define RW_PIN PB1
 #define E_PIN PB2
 
+/* LCD command definitions */
 typedef enum
 {
     CLEARDISPLAY = 0x01,
@@ -135,8 +136,9 @@ typedef enum
     BOTTOM = 1
 } Row_t;
 
-// Function prototypes
+/* Function prototypes */
 void LCD_Init(void);
 void LCD_Clear(void);
 void LCD_WriteString(char *str, Row_t row);
+
 #endif // LCD_H
