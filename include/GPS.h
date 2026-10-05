@@ -29,10 +29,24 @@
 #ifndef GPS_H
 #define GPS_H
 
+/* Includes */
 #include <avr/io.h>
 #include "USART.h"
 
-/* Function prototypes */
+/* Macros & Constants */
+#define POINT_INVALID 0xFFFF
+
+/* Type definitions */
+typedef struct
+{
+    uint16_t lat;
+    uint16_t lon;
+} Point_t;
+
+/* Public API */
 void GPS_Main(void);
+Point_t GPS_GetCurrentPoint(void);
+uint8_t GPS_HasValidPoint(void);
+uint8_t GPS_GetLonScaleFactor(void);
 
 #endif // GPS_H

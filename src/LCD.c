@@ -1,22 +1,35 @@
+/*******************************************************************************
+ * @file        LCD.c
+ * @brief       Drives the HD44780 16x2 display in 4-bit mode.
+ *
+ * @details     Initializes the display and provides functions for clearing
+ *              it and writing fixed-width text rows.
+ * @author      Jared Bawden
+ * @date        2026-10-03
+ * @version     1.0.0
+ ******************************************************************************/
+
+/* Includes */
 #include <avr/io.h>
 #include <util/delay.h>
 #include <string.h>
 #include "LCD.h"
 
+/* Macros & Constants */
 #ifndef F_CPU
 #define F_CPU 16000000UL // Define CPU frequency for delay functions
 #endif
 
+/* Private Prototypes */
 static void send(uint8_t data, SendMode_t mode);
 static void send4Bits(uint8_t data);
 static void pulseEnable(void);
 
-/* *****************************************************************
-Name:		LCD_Init
-Inputs:		none
-Outputs:	none
-Description:Configures the Data / command ports and initializes the LCD
-******************************************************************** */
+/* Public Functions */
+/**
+ * @brief Initialize the LCD in 4-bit, two-row mode.
+ * @return None.
+ */
 void LCD_Init(void)
 {
     /* Set data pins as output */
@@ -51,24 +64,22 @@ void LCD_Init(void)
     send(ENTRYMODESET | ENTRYLEFT | ENTRYSHIFTDECREMENT, CMD);
 }
 
-/* *****************************************************************
-Name:		LCD_Clear
-Inputs:		none
-Outputs:	none
-Description: Clears the LCD display by sending the clear command
-******************************************************************** */
+/**
+ * @brief Clear the LCD and return its cursor to the home position.
+ * @return None.
+ */
 void LCD_Clear(void)
 {
     send(CLEARDISPLAY, CMD); // Clear display command
     _delay_ms(2);
 }
 
-/* *****************************************************************
-Name:		LCD_WriteString
-Inputs:		string to be displayed (str)
-Outputs:	none
-Description: Writes a string to the LCD display
-******************************************************************** */
+/**
+ * @brief Write a padded or truncated 16-character string to an LCD row.
+ * @param str Null-terminated text to display.
+ * @param row LCD row to write, either TOP or BOTTOM.
+ * @return None.
+ */
 void LCD_WriteString(char *str, Row_t row)
 {
     if (row == TOP)
@@ -86,6 +97,7 @@ void LCD_WriteString(char *str, Row_t row)
     }
 }
 
+/* Private Functions */
 static void send(uint8_t data, SendMode_t mode)
 {
 

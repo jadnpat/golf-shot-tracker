@@ -40,7 +40,7 @@
 #ifndef LCD_H
 #define LCD_H
 
-/* LCD pin definitions */
+/* Macros & Constants */
 #define DATA_PORT PORTD
 #define DATA_DDR DDRD
 
@@ -136,7 +136,7 @@ typedef enum
     BOTTOM = 1
 } Row_t;
 
-/* Function prototypes */
+/* Public API */
 void LCD_Init(void);
 void LCD_Clear(void);
 void LCD_WriteString(char *str, Row_t row);

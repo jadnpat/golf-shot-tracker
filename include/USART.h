@@ -14,9 +14,10 @@
 #ifndef USART_H
 #define USART_H
 
+/* Includes */
 #include <stdint.h>
 
-/* Function prototypes*/
+/* Public API */
 void USART_Init(void);
 uint8_t USART_ReceiveByte(uint8_t *data);
 uint8_t USART_GetRxBufferOccupancy(void);

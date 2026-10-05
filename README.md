@@ -45,8 +45,7 @@ typedef struct
 } Point_t;
 ```
 
-I can then take the difference in latitude and longitude between two points and use that to calculate how far apart they are using the Pythagorean theorem based on the assumption that, due to the small distances I am measuring, the Earth can be modelled as flat.
-
+I can then take the difference in latitude and longitude between two points and use that to calculate how far apart they are using the Pythagorean theorem based on the assumption that, due to the small distances I am measuring, the Earth can be modelled as flat. I will have to scale the difference in longitude value by the cosine of the latitude to account for the varying distance between lines of longitude as you move toward/away from the poles. I can do this by pre-computing a LUT of cosine val
 e.g.
 ```c
 Point_t point1 =
@@ -62,7 +61,7 @@ Point_t point2 =
 }
 
 uint16_t latDiff = point2.lat - point1.lat; // For this example I am just subtracting larger from smaller since they are known but will handle this in the code.
-uint16_t lonDiff = point1.lat - point2.lat; 
+uint16_t lonDiff = point1.lon - point2.lon; 
 
-float dist = sqrt(latDiff^2 + lonDiff^2) * 0.1855; // Pseudocode, 0.1855 m per lat/lon unit (units of tens-of-thousandths of an arcminute or arcminute / 10000)
+float dist = sqrt(latDiff^2 + (cos(lon) * lonDiff)^2) * 0.1855; // Pseudocode, 0.1855 m per lat/lon unit (units of tens-of-thousandths of an arcminute or arcminute / 10000)
 ```
