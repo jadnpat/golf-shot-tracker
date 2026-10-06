@@ -22,6 +22,9 @@
 /* Local defines */
 #define HOLE_COUNT 18
 #define MAX_SHOTS_PER_HOLE 10
+#define ARCMINUTE_EMINUS5_TO_M 0.1855f
+#define ROUNDING_FACTOR 0.5f
+#define COSINE_LUT_MAX 255.0f
 
 /* Local type definitions */
 typedef enum
@@ -132,6 +135,7 @@ void ShotTracker_Main(void)
             if (shotBtnFlag)
             {
                 shotBtnFlag = 0;
+                storeCurrentShot();
 
                 if (holes[currentHole].shotCount >= MAX_SHOTS_PER_HOLE)
                 {
@@ -140,7 +144,6 @@ void ShotTracker_Main(void)
                     break;
                 }
 
-                storeCurrentShot();
                 shotStartPoint = currentPoint;
                 lastDisplayedPoint.lat = POINT_INVALID;
                 lastDisplayedPoint.lon = POINT_INVALID;
@@ -208,12 +211,12 @@ static uint16_t calculateDistance(Point_t point1, Point_t point2)
     int16_t longitudeDifference = wrappedDifference(point1.lon, point2.lon);
     
     float scaledLongitudeDifference =
-        ((float)longitudeDifference * GPS_GetLonScaleFactor()) / 255.0f;
+        ((float)longitudeDifference * GPS_GetLonScaleFactor()) / COSINE_LUT_MAX;
     float distanceUnits = sqrtf(
         (float)latitudeDifference * latitudeDifference +
         scaledLongitudeDifference * scaledLongitudeDifference);
 
-    return (uint16_t)(distanceUnits * 0.1855f + 0.5f);
+    return (uint16_t)(distanceUnits * ARCMINUTE_EMINUS5_TO_M + ROUNDING_FACTOR);
 }
 
 static void displayTracking(uint16_t distance)
