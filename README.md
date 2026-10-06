@@ -4,19 +4,23 @@
  - Track golf shot distances
  - Differentiate between shots
  - Track score
- - Allow user to see collected data
  
 ## Optional Future Requirements
  - Save X last rounds of data
  - Integrate data with map overlay
  - Select club for each shot
  - Track FIR, GIR, and putts
+ - Retrieve round data to PC
+ - Choose 9 or 18 hole round
+ - Undo shots
+ - "Speed golf" mode where you also record time taken for the round
 
 ## Distance Calculation
 ### Assumptions
  - Earth circumference is 40075 km
  - All distances for shots will be up to a maximum of 500m
  - The short-distance nature of this applications means I can assume that the Earth is flat for the purpose of the calculation
+ - The cosine factor for the longitude can be calculated once as the user won't be travelling far enough for it to change meaningfully
 
 ### Thinking behind calculation
 In GPS coordinates, the 40075 km circumference of the earth is broken up into 360 degrees and each degree is broken up further into 60 "minutes" (or arcminutes) and each minute is broken up again into 60 "seconds." The format of the latitude and longitude data in the GPRMC NMEA message is as follows: (D)DDmm.mm where DD (or DDD for longitude) is the degrees north or south and mm.mm is the minutes and fractions of a minute after the decimal point.
@@ -45,7 +49,9 @@ typedef struct
 } Point_t;
 ```
 
-I can then take the difference in latitude and longitude between two points and use that to calculate how far apart they are using the Pythagorean theorem based on the assumption that, due to the small distances I am measuring, the Earth can be modelled as flat. I will have to scale the difference in longitude value by the cosine of the latitude to account for the varying distance between lines of longitude as you move toward/away from the poles. I can do this by pre-computing a LUT of cosine val
+I can then take the difference in latitude and longitude between two points and use that to calculate how far apart they are using the Pythagorean theorem based on the assumption that, due to the small distances I am measuring, the Earth can be modelled as flat. I will have to scale the difference in longitude value by the cosine of the latitude to account for the varying distance between lines of longitude as you move toward/away from the poles. I can do this by pre-computing a LUT of cosine values scaled to uint8 size (0 to 255).
+
+
 e.g.
 ```c
 Point_t point1 =
@@ -65,3 +71,37 @@ uint16_t lonDiff = point1.lon - point2.lon;
 
 float dist = sqrt(latDiff^2 + (cos(lon) * lonDiff)^2) * 0.1855; // Pseudocode, 0.1855 m per lat/lon unit (units of tens-of-thousandths of an arcminute or arcminute / 10000)
 ```
+
+## System Overview
+
+The Golf Shot Tracker uses GPS positions to measure each shot and keeps a shot count for each of 18 holes. At startup, the display shows the first hole prompt. The shot button starts tracking from the current valid GPS point. As the golfer moves, the display shows the distance from that point to the latest GPS position. Pressing the shot button at the ball records the measured distance and starts tracking the next shot. Pressing the hole button records the current segment and advances to the next hole.
+
+The GPS module must provide at least one valid fix before shot tracking can start. Until then, pressing the shot button displays a waiting-for-GPS message. The GPS module retains its most recent valid point when later sentences are invalid or are not RMC sentences. Each hole can store up to 10 shots; attempting another shot displays "Pick it up mate" until the next-hole button is pressed. After hole 18, the display shows the total score, calculated as the sum of the shot counts for all holes.
+
+Shot data is currently stored in RAM and is cleared when the tracker is initialized. Saving rounds across power cycles is a future requirement.
+
+## Architecture and Data Flow
+
+| Module | Responsibility |
+| --- | --- |
+| `main.c` | Initializes the peripherals and repeatedly processes GPS input and tracker state. |
+| `USART.c` | Receives GPS bytes in an interrupt and places them in a ring buffer. |
+| `GPS.c` | Parses active GPRMC/GNRMC fixes, retains the latest valid point, and provides the longitude scale factor. |
+| `Buttons.c` | Detects debounced shot and hole button presses using external interrupts. |
+| `Timer.c` | Generates the millisecond tick used for button debounce timing. |
+| `ShotTracker.c` | Manages hole and shot state, calculates distances, and totals the round score. |
+| `LCD.c` | Writes status, distance, and score information to the 16x2 display. |
+
+```mermaid
+flowchart LR
+    GPS[GPS module] --> USART[USART RX interrupt and ring buffer]
+    USART --> Parser[GPS_Main and RMC parser]
+    Parser --> Point[Latest valid GPS point]
+    Point --> Tracker[ShotTracker_Main]
+    Buttons[Shot and hole buttons] --> ButtonISR[External interrupts and debounce flags]
+    Timer[Timer0 millisecond interrupt] --> ButtonISR
+    ButtonISR --> Tracker
+    Tracker --> LCD[LCD display]
+```
+
+## Future Improvements
